@@ -40,6 +40,8 @@ The script will continuously monitor the garage door's state using the video str
 
 - `server.py`: Main script that processes the video stream, detects the garage door state, and publishes it to an MQTT topic.
 - `mqtt.py`: An example script for displaying a video stream from the camera.
+- `save_snapshot.py`: Helper file for creating images from the camera for training
+- `train_ai_model.py`: Helper for training the ML model to detect open/closed state
 
 ## License
 

@@ -8,7 +8,7 @@ import threading
 
 video_stream = 'rtsp://localhost:51610/a5793736882c5dbc'
 mqtt_endpoint = '10.0.1.204'
-mqtt_queue = '/garage/door'
+mqtt_queue = 'garage/door'
 mqtt_username = 'mqtt'
 mqtt_password = 'mqtt'
 

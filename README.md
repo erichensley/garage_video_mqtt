@@ -62,4 +62,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Author
 
-Created by Eric Hensley. Inspired by [gas_monitor].(https://github.com/erkexzcx/gas_monitor/blob/main/instructions/part_1_preparation.md)
+Created by Eric Hensley. Inspired by [gas_monitor](https://github.com/erkexzcx/gas_monitor/blob/main/instructions/part_1_preparation.md)

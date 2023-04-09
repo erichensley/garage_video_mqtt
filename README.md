@@ -16,6 +16,7 @@ pip install opencv-python opencv-python-headless paho-mqtt scikit-learn
 ```
 
 ## Usage
+## Usage
 
 1. Clone the repository:
 
@@ -24,11 +25,23 @@ git clone https://github.com/erichensley/garage-door-state-detection.git
 cd garage-door-state-detection
 ```
 
-2. Update the `video_stream` variable in `server.py` with the RTSP URL of your camera.
+2. Update the `video_stream` variable in `server.py`, `save_snapshot.py`, and `train_ai_model.py` with the RTSP URL of your camera.
 
-3. Update the MQTT settings in `server.py` with your MQTT server's IP address, queue, username, and password.
+3. Capture images of the garage door in both open and closed states using `save_snapshot.py`. Try to get many different lighting conditions and states. You need at least 4 images for it to work but it works better the more images you have. Run the script and follow the on-screen instructions to save images for training:
 
-4. Run the `server.py` script:
+```bash
+python save_snapshot.py
+```
+
+4. Train the AI model using the captured images with `train_ai_model.py`. This script will create `generalsamples.data` and `generalresponses.data` files, which are used by the `server.py` script:
+
+```bash
+python train_ai_model.py
+```
+
+5. Update the MQTT settings in `server.py` with your MQTT server's IP address, queue, username, and password.
+
+6. Run the `server.py` script:
 
 ```bash
 python server.py

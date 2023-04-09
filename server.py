@@ -80,8 +80,8 @@ def get_garage_door_state(img, retries=3):
     img_reshaped = img_resized.reshape((1, 100))
     img_float = np.float32(img_reshaped)
 
-    cv2.imshow("Input Image", img)  # Display the input image
-    cv2.imshow("Grayscale Resized Image", img_resized)  # Display the grayscale resized image
+    #cv2.imshow("Input Image", img)  # Display the input image
+    #cv2.imshow("Grayscale Resized Image", img_resized)  # Display the grayscale resized image
     cv2.waitKey(1)
 
     prediction = knn.predict(img_float)

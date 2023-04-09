@@ -11,18 +11,18 @@ This project detects the state of a garage door (open or closed) using a video s
 
 To install the required libraries, run the following command:
 
-\```bash
+```bash
 pip install opencv-python opencv-python-headless paho-mqtt scikit-learn
-\```
+```
 
 ## Usage
 
 1. Clone the repository:
 
-\```bash
+```bash
 git clone https://github.com/erichensley/garage-door-state-detection.git
 cd garage-door-state-detection
-\```
+```
 
 2. Update the `video_stream` variable in `server.py` with the RTSP URL of your camera.
 
@@ -30,9 +30,9 @@ cd garage-door-state-detection
 
 4. Run the `server.py` script:
 
-\```bash
+```bash
 python server.py
-\```
+```
 
 The script will continuously monitor the garage door's state using the video stream and publish the state to the specified MQTT topic.
 

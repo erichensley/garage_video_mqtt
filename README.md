@@ -8,11 +8,12 @@ This project detects the state of a garage door (open or closed) using a video s
 - OpenCV
 - Paho MQTT
 - scikit-learn
+- termcolor
 
 To install the required libraries, run the following command:
 
 ```bash
-pip install opencv-python opencv-python-headless paho-mqtt scikit-learn
+pip install opencv-python opencv-python-headless paho-mqtt scikit-learn termcolor
 ```
 
 ## Usage

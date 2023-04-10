@@ -5,16 +5,26 @@ import cv2
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 import threading
+import json
 
 video_stream = 'rtsp://localhost:51610/a5793736882c5dbc'
 mqtt_endpoint = '10.0.1.204'
-mqtt_queue = 'garage/door'
+mqtt_queue = 'homeassistant/binary_sensor/garage_door/state'
+mqtt_config_topic = 'homeassistant/binary_sensor/garage_door/config'
 mqtt_username = 'mqtt'
 mqtt_password = 'mqtt'
 
 cap = cv2.VideoCapture(video_stream)
 current_frame = None
 frame_lock = threading.Lock()
+
+def send_home_assistant_config():
+    config_payload = {
+        "name": "Garage Door",
+        "device_class": "garage_door",
+        "state_topic": mqtt_queue
+    }
+    mqtt_client.publish(mqtt_config_topic, json.dumps(config_payload), retain=True)
 
 def reconnect_stream():
     global cap
@@ -96,7 +106,7 @@ while True:
         print("No frame available.")
         time.sleep(1)
         continue
-
+    send_home_assistant_config()
     garage_door_state = get_garage_door_state(img)
     print("Garage door state:", garage_door_state)
 

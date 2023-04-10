@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 import threading
 import json
+import os
+from termcolor import colored
 
 video_stream = 'rtsp://localhost:51610/a5793736882c5dbc'
 mqtt_endpoint = '10.0.1.204'
@@ -14,9 +16,19 @@ mqtt_config_topic = 'homeassistant/binary_sensor/garage_door/config'
 mqtt_username = 'mqtt'
 mqtt_password = 'mqtt'
 
+state_change_history = []
+last_state_change = time.time()
+last_garage_door_state = None
+prediction_threshold = 0.8
+mqtt_connected = False
+
+
 cap = cv2.VideoCapture(video_stream)
 current_frame = None
 frame_lock = threading.Lock()
+
+def clear_console():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def send_home_assistant_config():
     config_payload = {
@@ -52,7 +64,13 @@ frame_update_thread.start()
 
 
 def on_connect(client, userdata, flags, rc):
-    print("Connected! Result code: " + str(rc))
+    global mqtt_connected
+    if rc == 0 and not mqtt_connected:
+        print("Connected to MQTT!")
+        mqtt_connected = True
+    elif rc != 0:
+        print(f"Connection failed with result code {rc}")
+
 
 print("Connecting to MQTT...")
 mqtt_client = mqtt.Client("garage_door")
@@ -97,7 +115,7 @@ def get_garage_door_state(img, retries=3):
     prediction = knn.predict(img_float)
     prediction_probabilities = knn.predict_proba(img_float)
     print("Prediction probabilities:", prediction_probabilities)
-    return "open" if prediction[0] == 1 else "closed"
+    return ("open" if prediction[0] == 1 else "closed", prediction_probabilities)
 
 while True:
     with frame_lock:
@@ -107,8 +125,26 @@ while True:
         time.sleep(1)
         continue
     send_home_assistant_config()
-    garage_door_state = get_garage_door_state(img)
-    print("Garage door state:", garage_door_state)
+    garage_door_state, prediction_probabilities = get_garage_door_state(img)
+
+    if garage_door_state != last_garage_door_state:
+        last_state_change = time.time()
+        last_garage_door_state = garage_door_state
+        state_change_history.append((garage_door_state, last_state_change))
+
+    clear_console()
+    print("Garage Door State Detection\n")
+    print("Polling camera...")
+
+    state_color = "green" if garage_door_state == "closed" else "red"
+    print(colored(f"Garage door state: {garage_door_state}", state_color))
+    print(f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}")
+    print(f"Prediction threshold: {prediction_threshold}\n")
+
+    print("State change history:")
+    for state, timestamp in state_change_history:
+        state_color = "green" if state == "closed" else "red"
+        print(colored(f"{state} at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}", state_color))
 
     mqtt_client.publish(mqtt_queue, garage_door_state)
     time.sleep(5)

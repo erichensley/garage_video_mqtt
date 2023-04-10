@@ -114,7 +114,7 @@ def get_garage_door_state(img, retries=3):
 
     prediction = knn.predict(img_float)
     prediction_probabilities = knn.predict_proba(img_float)
-    print("Prediction probabilities:", prediction_probabilities)
+    #print("Prediction probabilities:", prediction_probabilities)
     return ("open" if prediction[0] == 1 else "closed", prediction_probabilities)
 
 while True:
@@ -139,7 +139,7 @@ while True:
     state_color = "green" if garage_door_state == "closed" else "red"
     print(colored(f"Garage door state: {garage_door_state}", state_color))
     print(f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}")
-    print(f"Prediction threshold: {prediction_threshold}\n")
+    print(f"Prediction probabilities : {prediction_probabilities}\n")
 
     print("State change history:")
     for state, timestamp in state_change_history:

@@ -45,8 +45,15 @@ def reconnect_stream():
 
 def update_frame():
     global cap, current_frame, frame_lock
+    reconnect_interval = 300  # Reconnect the stream every 300 seconds (5 minutes)
+    last_reconnect = time.time()
+
     while True:
         try:
+            if time.time() - last_reconnect >= reconnect_interval:
+                reconnect_stream()
+                last_reconnect = time.time()
+
             ret, frame = cap.read()
             if not ret:
                 reconnect_stream()
@@ -57,6 +64,7 @@ def update_frame():
             print(f"OpenCV error: {e}")
             reconnect_stream()
         time.sleep(0.1)
+
 
 frame_update_thread = threading.Thread(target=update_frame)
 frame_update_thread.daemon = True

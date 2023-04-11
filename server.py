@@ -20,6 +20,7 @@ state_change_history = []
 last_state_change = time.time()
 last_garage_door_state = None
 prediction_threshold = 0.8
+state_change_threshold = 0.8
 mqtt_connected = False
 healthy_count = 0
 failed_count = 0

@@ -27,6 +27,14 @@ cap = cv2.VideoCapture(video_stream)
 current_frame = None
 frame_lock = threading.Lock()
 
+def clear_console():
+    if os.name == 'nt':
+        os.system('cls')
+        time.sleep(0.1)  # Add a slight delay to prevent terminal from going blank
+    else:
+        os.system('clear')
+
+
 def send_home_assistant_config():
     config_payload = {
         "name": "Garage Door",
@@ -42,15 +50,8 @@ def reconnect_stream():
 
 def update_frame():
     global cap, current_frame, frame_lock
-    reconnect_interval = 300  # Reconnect the stream every 300 seconds (5 minutes)
-    last_reconnect = time.time()
-
     while True:
         try:
-            if time.time() - last_reconnect >= reconnect_interval:
-                reconnect_stream()
-                last_reconnect = time.time()
-
             ret, frame = cap.read()
             if not ret:
                 reconnect_stream()
@@ -61,7 +62,6 @@ def update_frame():
             print(f"OpenCV error: {e}")
             reconnect_stream()
         time.sleep(0.1)
-
 
 frame_update_thread = threading.Thread(target=update_frame)
 frame_update_thread.daemon = True
@@ -122,16 +122,6 @@ def get_garage_door_state(img, retries=3):
     #print("Prediction probabilities:", prediction_probabilities)
     return ("open" if prediction[0] == 1 else "closed", prediction_probabilities)
 
-def update_console(lines=10):
-    cursor_up = '\x1b[{}A'.format(lines)
-    clear_line = '\x1b[2K'
-    print(cursor_up + clear_line, end='')
-
-def update_console(lines=10):
-    cursor_up = '\x1b[{}A'.format(lines)
-    clear_line = '\x1b[2K'
-    print(cursor_up + clear_line, end='')
-
 while True:
     with frame_lock:
         img = current_frame.copy()
@@ -147,7 +137,7 @@ while True:
         last_garage_door_state = garage_door_state
         state_change_history.append((garage_door_state, last_state_change))
 
-    update_console()
+    clear_console()
     print("Garage Door State Detection\n")
     print("Polling camera...")
 
@@ -163,4 +153,3 @@ while True:
 
     mqtt_client.publish(mqtt_queue, garage_door_state)
     time.sleep(5)
-

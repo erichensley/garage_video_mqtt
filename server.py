@@ -142,6 +142,9 @@ def get_garage_door_state(img, retries=3):
     #print("Prediction probabilities:", prediction_probabilities)
     return ("open" if prediction[0] == 1 else "closed", prediction_probabilities)
 
+consecutive_threshold_crosses = 0
+consecutive_threshold_limit = 3
+
 while True:
     with frame_lock:
         img = current_frame.copy()
@@ -152,30 +155,33 @@ while True:
     send_home_assistant_config()
     garage_door_state, prediction_probabilities = get_garage_door_state(img)
 
-    # Calculate the stream health percentage
-    stream_health = (healthy_count / (healthy_count + failed_count)) * 100
+    max_probability = max(prediction_probabilities[0])
+    if garage_door_state != last_garage_door_state and max_probability >= state_change_threshold:
+        consecutive_threshold_crosses += 1
+        if consecutive_threshold_crosses >= consecutive_threshold_limit:
+            last_state_change = time.time()
+            last_garage_door_state = garage_door_state
+            state_change_history.append((garage_door_state, last_state_change))
+            consecutive_threshold_crosses = 0
+            mqtt_client.publish(mqtt_queue, garage_door_state)  # Move this line inside the condition
+    else:
+        consecutive_threshold_crosses = 0
 
-    if garage_door_state != last_garage_door_state:
-        last_state_change = time.time()
-        last_garage_door_state = garage_door_state
-        state_change_history.append((garage_door_state, last_state_change))
-
-    output = "Garage Door State Detection\n\n"
-    output += "Polling camera...\n\n"
+    clear_console()
+    print("Garage Door State Detection\n")
+    print("Polling camera...")
 
     state_color = "green" if garage_door_state == "closed" else "red"
-    output += colored(f"Garage door state: {garage_door_state}", state_color) + "\n"
-    output += f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}\n"
-    output += f"Prediction probabilities : {prediction_probabilities}\n\n"
+    print(colored(f"Garage door state: {garage_door_state}", state_color))
+    print(f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}")
+    print(f"Prediction probabilities : {prediction_probabilities}\n")
 
-    output += "State change history:\n"
+    print("State change history:")
     for state, timestamp in state_change_history:
         state_color = "green" if state == "closed" else "red"
-        output += colored(f"{state} at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}", state_color) + "\n"
+        print(colored(f"{state} at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}", state_color))
 
-    print_console_output(output)
-
-    mqtt_client.publish(mqtt_queue, garage_door_state)
-    print(f"Stream health: {stream_health:.2f}%")
     time.sleep(5)
+
+
 

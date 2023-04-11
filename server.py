@@ -27,9 +27,6 @@ cap = cv2.VideoCapture(video_stream)
 current_frame = None
 frame_lock = threading.Lock()
 
-def clear_console():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
 def send_home_assistant_config():
     config_payload = {
         "name": "Garage Door",
@@ -125,6 +122,16 @@ def get_garage_door_state(img, retries=3):
     #print("Prediction probabilities:", prediction_probabilities)
     return ("open" if prediction[0] == 1 else "closed", prediction_probabilities)
 
+def update_console(lines=10):
+    cursor_up = '\x1b[{}A'.format(lines)
+    clear_line = '\x1b[2K'
+    print(cursor_up + clear_line, end='')
+
+def update_console(lines=10):
+    cursor_up = '\x1b[{}A'.format(lines)
+    clear_line = '\x1b[2K'
+    print(cursor_up + clear_line, end='')
+
 while True:
     with frame_lock:
         img = current_frame.copy()
@@ -140,7 +147,7 @@ while True:
         last_garage_door_state = garage_door_state
         state_change_history.append((garage_door_state, last_state_change))
 
-    clear_console()
+    update_console()
     print("Garage Door State Detection\n")
     print("Polling camera...")
 
@@ -156,3 +163,4 @@ while True:
 
     mqtt_client.publish(mqtt_queue, garage_door_state)
     time.sleep(5)
+

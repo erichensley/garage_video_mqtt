@@ -21,6 +21,9 @@ last_state_change = time.time()
 last_garage_door_state = None
 prediction_threshold = 0.8
 mqtt_connected = False
+healthy_count = 0
+failed_count = 0
+
 
 
 cap = cv2.VideoCapture(video_stream)
@@ -33,6 +36,10 @@ def clear_console():
         time.sleep(0.1)  # Add a slight delay to prevent terminal from going blank
     else:
         os.system('clear')
+
+def print_console_output(output):
+    clear_console()
+    print(output)
 
 
 def send_home_assistant_config():
@@ -49,19 +56,31 @@ def reconnect_stream():
     cap = cv2.VideoCapture(video_stream)
 
 def update_frame():
-    global cap, current_frame, frame_lock
+    global cap, current_frame, frame_lock, healthy_count, failed_count
+    reconnect_interval = 300  # Reconnect the stream every 300 seconds (5 minutes)
+    last_reconnect = time.time()
+
     while True:
         try:
+            if time.time() - last_reconnect >= reconnect_interval:
+                reconnect_stream()
+                last_reconnect = time.time()
+
             ret, frame = cap.read()
             if not ret:
                 reconnect_stream()
+                failed_count += 1
             else:
                 with frame_lock:
                     current_frame = frame
+                healthy_count += 1
+
         except cv2.error as e:
             print(f"OpenCV error: {e}")
             reconnect_stream()
         time.sleep(0.1)
+
+
 
 frame_update_thread = threading.Thread(target=update_frame)
 frame_update_thread.daemon = True
@@ -132,24 +151,30 @@ while True:
     send_home_assistant_config()
     garage_door_state, prediction_probabilities = get_garage_door_state(img)
 
+    # Calculate the stream health percentage
+    stream_health = (healthy_count / (healthy_count + failed_count)) * 100
+
     if garage_door_state != last_garage_door_state:
         last_state_change = time.time()
         last_garage_door_state = garage_door_state
         state_change_history.append((garage_door_state, last_state_change))
 
-    clear_console()
-    print("Garage Door State Detection\n")
-    print("Polling camera...")
+    output = "Garage Door State Detection\n\n"
+    output += "Polling camera...\n\n"
 
     state_color = "green" if garage_door_state == "closed" else "red"
-    print(colored(f"Garage door state: {garage_door_state}", state_color))
-    print(f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}")
-    print(f"Prediction probabilities : {prediction_probabilities}\n")
+    output += colored(f"Garage door state: {garage_door_state}", state_color) + "\n"
+    output += f"Last state change: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_state_change))}\n"
+    output += f"Prediction probabilities : {prediction_probabilities}\n\n"
 
-    print("State change history:")
+    output += "State change history:\n"
     for state, timestamp in state_change_history:
         state_color = "green" if state == "closed" else "red"
-        print(colored(f"{state} at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}", state_color))
+        output += colored(f"{state} at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))}", state_color) + "\n"
+
+    print_console_output(output)
 
     mqtt_client.publish(mqtt_queue, garage_door_state)
+    print(f"Stream health: {stream_health:.2f}%")
     time.sleep(5)
+

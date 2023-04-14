@@ -1,5 +1,6 @@
 import cv2
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 
 def process_image(img):
     # Define the top-left and bottom-right coordinates of the region of interest
@@ -10,7 +11,16 @@ def process_image(img):
 
     return cropped_img
 
-cap = cv2.VideoCapture('rtsp://localhost:51610/a5793736882c5dbc')
-ret, img = cap.read()
-img = process_image(img)
-cv2.imwrite("snapshots/" + datetime.now().strftime("%m%d%Y%H%M%S") + ".jpg", img)
+def take_picture():
+    cap = cv2.VideoCapture('rtsp://localhost:51610/a5793736882c5dbc')
+    ret, img = cap.read()
+    img = process_image(img)
+    cv2.imwrite("snapshots/" + datetime.now().strftime("%m%d%Y%H%M%S") + ".jpg", img)
+    cap.release()
+
+start_time = datetime.now()
+end_time = start_time + timedelta(hours=24)
+
+while datetime.now() < end_time:
+    take_picture()
+    time.sleep(5 * 60)  # Sleep for 5 minutes
